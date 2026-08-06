@@ -1,0 +1,11 @@
+{
+  "extends": "@react-native/typescript-config",
+  "compilerOptions": {
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "react-native-pdf-text-extractor": ["./src/index"]
+    }
+  },
+  "exclude": ["example", "lib", "node_modules"]
+}
