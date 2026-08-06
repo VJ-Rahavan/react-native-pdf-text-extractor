@@ -27,12 +27,11 @@ enum PdfTextExtractorError: Error {
   }
 }
 
-@objc(RnPdfTextExtractor)
-class RnPdfTextExtractor: NSObject {
+@objc(RnPdfTextExtractorImpl)
+public class RnPdfTextExtractorImpl: NSObject {
 
-  @objc
-  static func requiresMainQueueSetup() -> Bool {
-    return false
+  override public init() {
+    super.init()
   }
 
   private func resolveURL(_ filePath: String) throws -> URL {
@@ -65,7 +64,7 @@ class RnPdfTextExtractor: NSObject {
   }
 
   @objc(getPageCount:resolve:reject:)
-  func getPageCount(
+  public func getPageCount(
     _ filePath: String,
     resolve: @escaping RCTPromiseResolveBlock,
     reject: @escaping RCTPromiseRejectBlock
@@ -81,7 +80,7 @@ class RnPdfTextExtractor: NSObject {
   }
 
   @objc(extractText:resolve:reject:)
-  func extractText(
+  public func extractText(
     _ filePath: String,
     resolve: @escaping RCTPromiseResolveBlock,
     reject: @escaping RCTPromiseRejectBlock
@@ -104,7 +103,7 @@ class RnPdfTextExtractor: NSObject {
   }
 
   @objc(extractAllText:resolve:reject:)
-  func extractAllText(
+  public func extractAllText(
     _ filePath: String,
     resolve: @escaping RCTPromiseResolveBlock,
     reject: @escaping RCTPromiseRejectBlock
@@ -124,7 +123,7 @@ class RnPdfTextExtractor: NSObject {
   }
 
   @objc(extractPageText:pageIndex:resolve:reject:)
-  func extractPageText(
+  public func extractPageText(
     _ filePath: String,
     pageIndex: NSNumber,
     resolve: @escaping RCTPromiseResolveBlock,

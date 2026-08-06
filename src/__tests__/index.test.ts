@@ -5,17 +5,17 @@ const mockNativeModule = {
   extractPageText: jest.fn(),
 };
 
-jest.mock('react-native', () => ({
-  NativeModules: { RnPdfTextExtractor: mockNativeModule },
-  Platform: { select: (obj: Record<string, unknown>) => obj.ios ?? obj.default },
+jest.mock('../NativeRnPdfTextExtractor', () => ({
+  __esModule: true,
+  default: mockNativeModule,
 }));
 
 import type * as IndexModule from '../index';
 
 // Required (not imported) after jest.mock so the mock is registered before
-// '../index' evaluates `NativeModules.RnPdfTextExtractor` at module scope.
-// A plain top-level `import` gets hoisted above `jest.mock` by the RN jest
-// preset's custom test environment, which defeats the mock.
+// '../index' evaluates the native module at module scope. A plain top-level
+// `import` gets hoisted above `jest.mock` by the RN jest preset's custom test
+// environment, which defeats the mock.
 const { getPageCount, extractText, extractAllText, extractPageText } =
   require('../index') as typeof IndexModule;
 

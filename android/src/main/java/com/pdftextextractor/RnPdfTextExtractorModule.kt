@@ -4,8 +4,6 @@ import android.net.Uri
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReactContextBaseJavaModule
-import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.WritableArray
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
@@ -22,7 +20,7 @@ import java.io.IOException
 private class UnsupportedUriException(message: String) : Exception(message)
 
 class RnPdfTextExtractorModule(reactContext: ReactApplicationContext) :
-  ReactContextBaseJavaModule(reactContext) {
+  NativeRnPdfTextExtractorSpec(reactContext) {
 
   private val moduleScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -31,8 +29,6 @@ class RnPdfTextExtractorModule(reactContext: ReactApplicationContext) :
       PDFBoxResourceLoader.init(reactContext.applicationContext)
     }
   }
-
-  override fun getName() = NAME
 
   override fun invalidate() {
     super.invalidate()
@@ -63,8 +59,7 @@ class RnPdfTextExtractorModule(reactContext: ReactApplicationContext) :
     }
   }
 
-  @ReactMethod
-  fun getPageCount(filePath: String, promise: Promise) {
+  override fun getPageCount(filePath: String, promise: Promise) {
     moduleScope.launch {
       try {
         val file = resolveFile(filePath)
@@ -77,8 +72,7 @@ class RnPdfTextExtractorModule(reactContext: ReactApplicationContext) :
     }
   }
 
-  @ReactMethod
-  fun extractText(filePath: String, promise: Promise) {
+  override fun extractText(filePath: String, promise: Promise) {
     moduleScope.launch {
       try {
         val file = resolveFile(filePath)
@@ -94,8 +88,7 @@ class RnPdfTextExtractorModule(reactContext: ReactApplicationContext) :
     }
   }
 
-  @ReactMethod
-  fun extractAllText(filePath: String, promise: Promise) {
+  override fun extractAllText(filePath: String, promise: Promise) {
     moduleScope.launch {
       try {
         val file = resolveFile(filePath)
@@ -115,23 +108,23 @@ class RnPdfTextExtractorModule(reactContext: ReactApplicationContext) :
     }
   }
 
-  @ReactMethod
-  fun extractPageText(filePath: String, pageIndex: Int, promise: Promise) {
+  override fun extractPageText(filePath: String, pageIndex: Double, promise: Promise) {
+    val index = pageIndex.toInt()
     moduleScope.launch {
       try {
         val file = resolveFile(filePath)
         PDDocument.load(file).use { document ->
           val pageCount = document.numberOfPages
-          if (pageIndex < 0 || pageIndex >= pageCount) {
+          if (index < 0 || index >= pageCount) {
             promise.reject(
               "E_INVALID_PAGE",
-              "Page index $pageIndex out of range (document has $pageCount pages)"
+              "Page index $index out of range (document has $pageCount pages)"
             )
             return@use
           }
           val stripper = PDFTextStripper()
-          stripper.startPage = pageIndex + 1
-          stripper.endPage = pageIndex + 1
+          stripper.startPage = index + 1
+          stripper.endPage = index + 1
           promise.resolve(stripper.getText(document).trim())
         }
       } catch (e: Exception) {
@@ -141,6 +134,6 @@ class RnPdfTextExtractorModule(reactContext: ReactApplicationContext) :
   }
 
   companion object {
-    const val NAME = "RnPdfTextExtractor"
+    const val NAME = NativeRnPdfTextExtractorSpec.NAME
   }
 }

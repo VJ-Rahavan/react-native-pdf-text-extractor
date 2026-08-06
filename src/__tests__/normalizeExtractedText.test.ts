@@ -54,9 +54,9 @@ const mockNativeModule = {
   extractPageText: jest.fn(),
 };
 
-jest.mock('react-native', () => ({
-  NativeModules: { RnPdfTextExtractor: mockNativeModule },
-  Platform: { select: (obj: Record<string, unknown>) => obj.ios ?? obj.default },
+jest.mock('../NativeRnPdfTextExtractor', () => ({
+  __esModule: true,
+  default: mockNativeModule,
 }));
 
 import type * as IndexModule from '../index';

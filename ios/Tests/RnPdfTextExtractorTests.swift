@@ -3,7 +3,7 @@ import XCTest
 @testable import RnPdfTextExtractor
 
 final class RnPdfTextExtractorTests: XCTestCase {
-  private let sut = RnPdfTextExtractor()
+  private let sut = RnPdfTextExtractorImpl()
 
   private func fixturePath(_ name: String) -> String {
     let testBundle = Bundle(for: RnPdfTextExtractorTests.self)

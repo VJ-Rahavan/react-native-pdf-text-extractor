@@ -103,6 +103,14 @@
     "languages": "kotlin-swift",
     "version": "0.63.0"
   },
+  "codegenConfig": {
+    "name": "RnPdfTextExtractorSpec",
+    "type": "modules",
+    "jsSrcsDir": "src",
+    "android": {
+      "javaPackageName": "com.pdftextextractor"
+    }
+  },
   "react-native-builder-bob": {
     "source": "src",
     "output": "lib",
