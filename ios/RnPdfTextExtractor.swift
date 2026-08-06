@@ -70,11 +70,13 @@ class RnPdfTextExtractor: NSObject {
     resolve: @escaping RCTPromiseResolveBlock,
     reject: @escaping RCTPromiseRejectBlock
   ) {
-    do {
-      let document = try loadDocument(filePath)
-      resolve(document.pageCount)
-    } catch {
-      handle(error, reject)
+    DispatchQueue.global(qos: .userInitiated).async {
+      do {
+        let document = try self.loadDocument(filePath)
+        resolve(document.pageCount)
+      } catch {
+        self.handle(error, reject)
+      }
     }
   }
 
@@ -84,18 +86,20 @@ class RnPdfTextExtractor: NSObject {
     resolve: @escaping RCTPromiseResolveBlock,
     reject: @escaping RCTPromiseRejectBlock
   ) {
-    do {
-      let document = try loadDocument(filePath)
-      var text = ""
-      for i in 0..<document.pageCount {
-        text += document.page(at: i)?.string ?? ""
-        if i < document.pageCount - 1 {
-          text += "\n"
+    DispatchQueue.global(qos: .userInitiated).async {
+      do {
+        let document = try self.loadDocument(filePath)
+        var text = ""
+        for i in 0..<document.pageCount {
+          text += document.page(at: i)?.string ?? ""
+          if i < document.pageCount - 1 {
+            text += "\n"
+          }
         }
+        resolve(text)
+      } catch {
+        self.handle(error, reject)
       }
-      resolve(text)
-    } catch {
-      handle(error, reject)
     }
   }
 
@@ -105,15 +109,17 @@ class RnPdfTextExtractor: NSObject {
     resolve: @escaping RCTPromiseResolveBlock,
     reject: @escaping RCTPromiseRejectBlock
   ) {
-    do {
-      let document = try loadDocument(filePath)
-      var pages: [String] = []
-      for i in 0..<document.pageCount {
-        pages.append(document.page(at: i)?.string ?? "")
+    DispatchQueue.global(qos: .userInitiated).async {
+      do {
+        let document = try self.loadDocument(filePath)
+        var pages: [String] = []
+        for i in 0..<document.pageCount {
+          pages.append(document.page(at: i)?.string ?? "")
+        }
+        resolve(pages)
+      } catch {
+        self.handle(error, reject)
       }
-      resolve(pages)
-    } catch {
-      handle(error, reject)
     }
   }
 
@@ -124,24 +130,26 @@ class RnPdfTextExtractor: NSObject {
     resolve: @escaping RCTPromiseResolveBlock,
     reject: @escaping RCTPromiseRejectBlock
   ) {
-    do {
-      let document = try loadDocument(filePath)
-      let index = pageIndex.intValue
-      guard index >= 0 && index < document.pageCount else {
-        reject(
-          "E_INVALID_PAGE",
-          "Page index \(index) out of range (document has \(document.pageCount) pages)",
-          nil
-        )
-        return
+    DispatchQueue.global(qos: .userInitiated).async {
+      do {
+        let document = try self.loadDocument(filePath)
+        let index = pageIndex.intValue
+        guard index >= 0 && index < document.pageCount else {
+          reject(
+            "E_INVALID_PAGE",
+            "Page index \(index) out of range (document has \(document.pageCount) pages)",
+            nil
+          )
+          return
+        }
+        guard let page = document.page(at: index) else {
+          reject("E_PDF_PROCESSING", "Unable to load page \(index)", nil)
+          return
+        }
+        resolve(page.string ?? "")
+      } catch {
+        self.handle(error, reject)
       }
-      guard let page = document.page(at: index) else {
-        reject("E_PDF_PROCESSING", "Unable to load page \(index)", nil)
-        return
-      }
-      resolve(page.string ?? "")
-    } catch {
-      handle(error, reject)
     }
   }
 }

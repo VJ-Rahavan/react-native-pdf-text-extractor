@@ -10,6 +10,11 @@ import com.facebook.react.bridge.WritableArray
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.text.PDFTextStripper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -19,6 +24,8 @@ private class UnsupportedUriException(message: String) : Exception(message)
 class RnPdfTextExtractorModule(reactContext: ReactApplicationContext) :
   ReactContextBaseJavaModule(reactContext) {
 
+  private val moduleScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
   init {
     if (!PDFBoxResourceLoader.isReady()) {
       PDFBoxResourceLoader.init(reactContext.applicationContext)
@@ -26,6 +33,11 @@ class RnPdfTextExtractorModule(reactContext: ReactApplicationContext) :
   }
 
   override fun getName() = NAME
+
+  override fun invalidate() {
+    super.invalidate()
+    moduleScope.cancel()
+  }
 
   private fun resolveFile(filePath: String): File {
     val uri = Uri.parse(filePath)
@@ -53,70 +65,78 @@ class RnPdfTextExtractorModule(reactContext: ReactApplicationContext) :
 
   @ReactMethod
   fun getPageCount(filePath: String, promise: Promise) {
-    try {
-      val file = resolveFile(filePath)
-      PDDocument.load(file).use { document ->
-        promise.resolve(document.numberOfPages)
+    moduleScope.launch {
+      try {
+        val file = resolveFile(filePath)
+        PDDocument.load(file).use { document ->
+          promise.resolve(document.numberOfPages)
+        }
+      } catch (e: Exception) {
+        reject(promise, e)
       }
-    } catch (e: Exception) {
-      reject(promise, e)
     }
   }
 
   @ReactMethod
   fun extractText(filePath: String, promise: Promise) {
-    try {
-      val file = resolveFile(filePath)
-      PDDocument.load(file).use { document ->
-        // PDFTextStripper pads its output with a trailing line separator per
-        // page even when the page has no text at all, so trim the edges to
-        // match the "empty string means no extractable text" contract.
-        promise.resolve(PDFTextStripper().getText(document).trim())
+    moduleScope.launch {
+      try {
+        val file = resolveFile(filePath)
+        PDDocument.load(file).use { document ->
+          // PDFTextStripper pads its output with a trailing line separator per
+          // page even when the page has no text at all, so trim the edges to
+          // match the "empty string means no extractable text" contract.
+          promise.resolve(PDFTextStripper().getText(document).trim())
+        }
+      } catch (e: Exception) {
+        reject(promise, e)
       }
-    } catch (e: Exception) {
-      reject(promise, e)
     }
   }
 
   @ReactMethod
   fun extractAllText(filePath: String, promise: Promise) {
-    try {
-      val file = resolveFile(filePath)
-      PDDocument.load(file).use { document ->
-        val pages: WritableArray = Arguments.createArray()
-        val stripper = PDFTextStripper()
-        for (pageIndex in 0 until document.numberOfPages) {
-          stripper.startPage = pageIndex + 1
-          stripper.endPage = pageIndex + 1
-          pages.pushString(stripper.getText(document).trim())
+    moduleScope.launch {
+      try {
+        val file = resolveFile(filePath)
+        PDDocument.load(file).use { document ->
+          val pages: WritableArray = Arguments.createArray()
+          val stripper = PDFTextStripper()
+          for (pageIndex in 0 until document.numberOfPages) {
+            stripper.startPage = pageIndex + 1
+            stripper.endPage = pageIndex + 1
+            pages.pushString(stripper.getText(document).trim())
+          }
+          promise.resolve(pages)
         }
-        promise.resolve(pages)
+      } catch (e: Exception) {
+        reject(promise, e)
       }
-    } catch (e: Exception) {
-      reject(promise, e)
     }
   }
 
   @ReactMethod
   fun extractPageText(filePath: String, pageIndex: Int, promise: Promise) {
-    try {
-      val file = resolveFile(filePath)
-      PDDocument.load(file).use { document ->
-        val pageCount = document.numberOfPages
-        if (pageIndex < 0 || pageIndex >= pageCount) {
-          promise.reject(
-            "E_INVALID_PAGE",
-            "Page index $pageIndex out of range (document has $pageCount pages)"
-          )
-          return@use
+    moduleScope.launch {
+      try {
+        val file = resolveFile(filePath)
+        PDDocument.load(file).use { document ->
+          val pageCount = document.numberOfPages
+          if (pageIndex < 0 || pageIndex >= pageCount) {
+            promise.reject(
+              "E_INVALID_PAGE",
+              "Page index $pageIndex out of range (document has $pageCount pages)"
+            )
+            return@use
+          }
+          val stripper = PDFTextStripper()
+          stripper.startPage = pageIndex + 1
+          stripper.endPage = pageIndex + 1
+          promise.resolve(stripper.getText(document).trim())
         }
-        val stripper = PDFTextStripper()
-        stripper.startPage = pageIndex + 1
-        stripper.endPage = pageIndex + 1
-        promise.resolve(stripper.getText(document).trim())
+      } catch (e: Exception) {
+        reject(promise, e)
       }
-    } catch (e: Exception) {
-      reject(promise, e)
     }
   }
 
