@@ -59,20 +59,79 @@ const secondPage = await extractPageText(filePath, 1); // 0-indexed
 
 Resolves with the number of pages in the PDF.
 
-### `extractText(filePath: string): Promise<string>`
+### `extractText(filePath: string, options?: ExtractOptions): Promise<string>`
 
 Extracts the text of every page and concatenates it into a single string,
 separated by newlines.
 
-### `extractAllText(filePath: string): Promise<string[]>`
+Pass `{ normalize: true }` to clean up common extraction artifacts (see
+[Text normalization](#text-normalization)) before the promise resolves.
+Omitting `options` leaves the text exactly as extracted, unchanged from
+previous versions.
+
+```ts
+await extractText(filePath, { normalize: true });
+// runs every normalization step with its default settings
+
+await extractText(filePath, { normalize: { dehyphenate: false } });
+// runs normalization, but leaves hyphenated line-wraps alone
+```
+
+### `extractAllText(filePath: string, options?: ExtractOptions): Promise<string[]>`
 
 Extracts the text of every page, returned as one string per page (index 0 is
 the first page). A page with no extractable text (e.g. a scanned image with
 no OCR layer) resolves to `''` rather than throwing.
 
-### `extractPageText(filePath: string, pageIndex: number): Promise<string>`
+The `normalize` option (see [Text normalization](#text-normalization))
+applies to each page independently, not to the array as a whole:
+
+```ts
+await extractAllText(filePath, { normalize: true });
+
+await extractAllText(filePath, {
+  normalize: { stripInvisibleChars: true, unwrapLines: false },
+});
+```
+
+### `extractPageText(filePath: string, pageIndex: number, options?: ExtractOptions): Promise<string>`
 
 Extracts the text of a single page. `pageIndex` is 0-indexed.
+
+```ts
+await extractPageText(filePath, 1, { normalize: true });
+```
+
+## Text normalization
+
+PDF text layers often carry artifacts that are harmless to read but noisy
+for downstream NLP — words split by a hyphen at a line-wrap, hard line
+breaks in the middle of a sentence, invisible control/format characters. The
+`normalize` option on `extractText`, `extractAllText`, and `extractPageText`
+(and the standalone `normalizeExtractedText` function) cleans these up.
+This is **opt-in** — omitting `options` (or passing `normalize: false`)
+leaves extracted text exactly as returned by the native extractor.
+
+```ts
+import { normalizeExtractedText } from 'react-native-pdf-text-extractor';
+
+normalizeExtractedText('under-\nstand this'); // "understand this"
+```
+
+`normalize` accepts either `true` (run every step below with its default)
+or a partial `NormalizeTextOptions` object (unspecified steps still default
+to `true`):
+
+| Option               | Default | Effect                                                              |
+| --------------------- | ------- | --------------------------------------------------------------------- |
+| `stripInvisibleChars` | `true`  | Removes invisible control/format characters (zero-width spaces, etc.), keeping `\n` and `\t`. |
+| `dehyphenate`         | `true`  | Rejoins a word split by a hyphen at a line-wrap, e.g. `"under-\nstand"` -> `"understand"`. |
+| `collapseBlankLines`  | `true`  | Collapses runs of 3+ newlines down to a single blank line.          |
+| `unwrapLines`         | `true`  | Replaces a single mid-paragraph line break with a space, while preserving real paragraph breaks (`\n\n`). |
+
+Whitespace is always tidied (runs of spaces/tabs collapsed, trailing
+spaces before a newline stripped) and the result is always `.trim()`ed,
+regardless of which steps above are enabled.
 
 ## `filePath`
 

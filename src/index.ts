@@ -1,4 +1,11 @@
 import { NativeModules, Platform } from 'react-native';
+import {
+  normalizeExtractedText,
+  type NormalizeTextOptions,
+} from './normalizeExtractedText';
+
+export { normalizeExtractedText };
+export type { NormalizeTextOptions };
 
 const LINKING_ERROR =
   `The package 'react-native-pdf-text-extractor' doesn't seem to be linked. Make sure: \n\n` +
@@ -47,6 +54,27 @@ function assertPageIndex(pageIndex: number): void {
   }
 }
 
+export interface ExtractOptions {
+  /**
+   * Clean up extraction artifacts (hyphenated line-wraps, hard line breaks,
+   * invisible characters) before resolving. Omitted/`false` by default,
+   * leaving text exactly as the native extractor returned it. Pass `true`
+   * to normalize with the default steps, or a {@link NormalizeTextOptions}
+   * object to enable only specific steps.
+   */
+  normalize?: boolean | NormalizeTextOptions;
+}
+
+function applyNormalize(
+  text: string,
+  normalize: boolean | NormalizeTextOptions | undefined
+): string {
+  if (!normalize) {
+    return text;
+  }
+  return normalizeExtractedText(text, normalize === true ? undefined : normalize);
+}
+
 /**
  * Returns the number of pages in the PDF at `filePath`.
  */
@@ -59,20 +87,31 @@ export function getPageCount(filePath: string): Promise<number> {
  * Extracts and concatenates the text of every page in the PDF at `filePath`
  * into a single string, in page order, separated by newlines.
  */
-export function extractText(filePath: string): Promise<string> {
+export function extractText(
+  filePath: string,
+  options: ExtractOptions = {}
+): Promise<string> {
   assertFilePath(filePath);
-  return RnPdfTextExtractor.extractText(filePath);
+  return RnPdfTextExtractor.extractText(filePath).then((text) =>
+    applyNormalize(text, options.normalize)
+  );
 }
 
 /**
  * Extracts the text of every page in the PDF at `filePath`, returned as one
  * string per page (index 0 = first page). Pages with no extractable text
  * (e.g. scanned/image-only pages) resolve to an empty string rather than
- * throwing.
+ * throwing. When `options.normalize` is set, each page is normalized
+ * independently (not the joined text).
  */
-export function extractAllText(filePath: string): Promise<string[]> {
+export function extractAllText(
+  filePath: string,
+  options: ExtractOptions = {}
+): Promise<string[]> {
   assertFilePath(filePath);
-  return RnPdfTextExtractor.extractAllText(filePath);
+  return RnPdfTextExtractor.extractAllText(filePath).then((pages) =>
+    pages.map((page) => applyNormalize(page, options.normalize))
+  );
 }
 
 /**
@@ -80,9 +119,12 @@ export function extractAllText(filePath: string): Promise<string[]> {
  */
 export function extractPageText(
   filePath: string,
-  pageIndex: number
+  pageIndex: number,
+  options: ExtractOptions = {}
 ): Promise<string> {
   assertFilePath(filePath);
   assertPageIndex(pageIndex);
-  return RnPdfTextExtractor.extractPageText(filePath, pageIndex);
+  return RnPdfTextExtractor.extractPageText(filePath, pageIndex).then((text) =>
+    applyNormalize(text, options.normalize)
+  );
 }
