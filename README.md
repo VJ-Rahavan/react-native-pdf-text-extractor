@@ -166,4 +166,3 @@ back to bundled sample PDFs) and displays extracted text.
 ## License
 
 MIT
-# react-native-pdf-text-extractor

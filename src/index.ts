@@ -11,8 +11,7 @@ export type PdfTextExtractorErrorCode =
   | 'E_FILE_NOT_FOUND'
   | 'E_UNSUPPORTED_URI'
   | 'E_INVALID_PAGE'
-  | 'E_PDF_PROCESSING'
-  | 'E_INVALID_ARGUMENT';
+  | 'E_PDF_PROCESSING';
 
 function assertFilePath(filePath: string): void {
   if (typeof filePath !== 'string' || filePath.length === 0) {

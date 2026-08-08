@@ -95,7 +95,7 @@ public class RnPdfTextExtractorImpl: NSObject {
             text += "\n"
           }
         }
-        resolve(text)
+        resolve(text.trimmingCharacters(in: .whitespacesAndNewlines))
       } catch {
         self.handle(error, reject)
       }
@@ -113,7 +113,8 @@ public class RnPdfTextExtractorImpl: NSObject {
         let document = try self.loadDocument(filePath)
         var pages: [String] = []
         for i in 0..<document.pageCount {
-          pages.append(document.page(at: i)?.string ?? "")
+          let pageText = document.page(at: i)?.string ?? ""
+          pages.append(pageText.trimmingCharacters(in: .whitespacesAndNewlines))
         }
         resolve(pages)
       } catch {
@@ -145,7 +146,7 @@ public class RnPdfTextExtractorImpl: NSObject {
           reject("E_PDF_PROCESSING", "Unable to load page \(index)", nil)
           return
         }
-        resolve(page.string ?? "")
+        resolve((page.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines))
       } catch {
         self.handle(error, reject)
       }
