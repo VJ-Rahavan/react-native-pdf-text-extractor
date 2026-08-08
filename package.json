@@ -55,14 +55,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vijayarahavank/react-native-pdf-text-extractor.git"
+    "url": "git+https://github.com/VJ-Rahavan/react-native-pdf-text-extractor.git"
   },
   "author": "Vijayarahavan K <vijayarahavan.k@purplescape.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/vijayarahavank/react-native-pdf-text-extractor/issues"
+    "url": "https://github.com/VJ-Rahavan/react-native-pdf-text-extractor/issues"
   },
-  "homepage": "https://github.com/vijayarahavank/react-native-pdf-text-extractor#readme",
+  "homepage": "https://github.com/VJ-Rahavan/react-native-pdf-text-extractor#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
     "access": "public"
